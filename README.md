@@ -11,6 +11,39 @@ file.
 - [jq](https://stedolan.github.io/jq/)
 - [gzip](https://www.gnu.org/software/gzip/)
 
+## Data Format
+
+The resulting gzipped JSON file contains data in the following format:
+
+```json5
+{
+  "timestamp": 1633282807.294814, // UNIX timestamp in seconds
+  "elements": [
+    {
+      // Unique numeric ID
+      "id": 9079237567,
+      // Latitude, longitude (WGS84 coordinates, I assume)
+      "lat": 47.0701573,
+      "lon": 7.5664432,
+      // Timestamp of last update
+      "timestamp": "2021-09-10T11:47:56Z",
+      // Numeric, monotonically increasing version number
+      "version": 1,
+      // User that last modified this POI
+      "user": "dbrgn",
+      // Raw key-value OSM tags
+      "tags": {
+        "amenity": "charging_station",
+        ...
+      }
+    },
+    ...
+  ]
+}
+```
+
+For the tagging schema, see <https://wiki.openstreetmap.org/wiki/DE:Tag:amenity%3Dcharging_station>
+
 ## Usage
 
 Simply invoke the script:

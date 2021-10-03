@@ -45,6 +45,11 @@ size_raw=$(du -h $OUTFILE_RAW | cut -f1)
 # Process
 
 log "2: Processing $found_elements entries in $size_raw of raw JSON"
-$JQ_BIN "[ .elements[] | {id,lat,lon,timestamp,version,user,tags} ]" $OUTFILE_RAW | $GZIP_BIN -9 > $OUTFILE_COMPRESSED
+$JQ_BIN "{
+    timestamp: now,
+    elements: [
+        .elements[] | {id,lat,lon,timestamp,version,user,tags}
+    ]
+}"  $OUTFILE_RAW | $GZIP_BIN -9 > $OUTFILE_COMPRESSED
 size_compressed=$(du -h $OUTFILE_COMPRESSED | cut -f1)
 log "Done: $OUTFILE_COMPRESSED ($size_compressed)"
