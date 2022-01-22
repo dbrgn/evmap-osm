@@ -16,6 +16,7 @@ set -euo pipefail
 OVERPASS_INTERPRETER="https://overpass-api.de/api/interpreter"
 TIMEOUT_SECONDS=900 # 15m
 OUTFILE_RAW="overpass-result.json"
+OUTFILE_PROCESSED="overpass-result-processed.json"
 OUTFILE_COMPRESSED="charging-stations-osm.json.gz"
 CURL_BIN=curl
 JQ_BIN=jq
@@ -45,11 +46,8 @@ size_raw=$(du -h $OUTFILE_RAW | cut -f1)
 # Process
 
 log "2: Processing $found_elements entries in $size_raw of raw JSON"
-$JQ_BIN "{
-    timestamp: now,
-    elements: [
-        .elements[] | {id,lat,lon,timestamp,version,user,tags}
-    ]
-}"  $OUTFILE_RAW | $GZIP_BIN -9 > $OUTFILE_COMPRESSED
+echo "{\"type\": \"meta\", \"timestamp\": \"$(date +%s)\", \"generator\": \"https://github.com/dbrgn/evmap-osm\"}" > $OUTFILE_PROCESSED
+$JQ_BIN -c '.elements[] | {id,lat,lon,timestamp,version,user,tags}' $OUTFILE_RAW >> $OUTFILE_PROCESSED
+$GZIP_BIN -9 --stdout $OUTFILE_PROCESSED > $OUTFILE_COMPRESSED
 size_compressed=$(du -h $OUTFILE_COMPRESSED | cut -f1)
 log "Done: $OUTFILE_COMPRESSED ($size_compressed)"
