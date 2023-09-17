@@ -47,6 +47,7 @@ size_raw=$(du -h $OUTFILE_RAW | cut -f1)
 log "2: Processing $found_elements entries in $size_raw of raw JSON"
 $JQ_BIN "{
     timestamp: now,
+    count: $found_elements,
     elements: [
         .elements[] | {id,lat,lon,timestamp,version,user,tags}
     ]
