@@ -1,2 +1,5 @@
 *.json
 *.json.gz
+
+# Rust / cargo
+/target
