@@ -6,6 +6,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use anyhow::{Context, Result};
 use clap::Parser;
 use flate2::{Compression, write::GzEncoder};
 use serde::{Deserialize, Serialize};
@@ -134,7 +135,7 @@ fn get_file_size_human(path: &Path) -> String {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Build the Overpass query
@@ -153,27 +154,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(std::time::Duration::from_secs(
             args.timeout_seconds as u64 + 30,
         ))
-        .build()?;
+        .build()
+        .context("Failed to build HTTP client")?;
 
     let response = client
         .post(&args.overpass_url)
         .header("content-type", "text/plain")
         .body(query)
         .send()
-        .await?;
+        .await
+        .context("Failed to send request to Overpass API")?;
 
     if !response.status().is_success() {
         log_error(&format!(
             "HTTP request failed with status: {}",
             response.status()
         ));
-        return Err(format!("HTTP request failed with status: {}", response.status()).into());
+        anyhow::bail!("HTTP request failed with status: {}", response.status());
     }
 
-    let response_bytes = response.bytes().await?;
+    let response_bytes = response
+        .bytes()
+        .await
+        .context("Failed to read response body")?;
 
     // Parse the JSON response
-    let overpass_response: OverpassResponse = serde_json::from_slice(&response_bytes)?;
+    let overpass_response: OverpassResponse = serde_json::from_slice(&response_bytes)
+        .context("Failed to parse Overpass API response as JSON")?;
 
     let element_count = overpass_response.elements.len();
     if element_count == 0 {
@@ -184,12 +191,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 log_error(&format!("Details: {}", remark));
             }
         }
-        return Err("No elements found in response".into());
+        anyhow::bail!("No elements found in response");
     }
 
     // Save intermediate file if requested
     if args.keep_intermediate {
-        std::fs::write(&args.outfile_raw, &response_bytes)?;
+        std::fs::write(&args.outfile_raw, &response_bytes)
+            .context("Failed to write intermediate file")?;
         let size_raw = get_file_size_human(Path::new(&args.outfile_raw));
         log_info(&format!(
             "Saved intermediate file: {} ({})",
@@ -201,7 +209,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log_info(&format!("2: Processing {} entries", element_count));
 
     // Get current timestamp
-    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .context("Failed to get system time")?
+        .as_secs();
 
     // Create processed output
     let processed = ProcessedOutput {
@@ -215,13 +226,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Serialize to JSON
-    let json_output = serde_json::to_vec(&processed)?;
+    let json_output =
+        serde_json::to_vec(&processed).context("Failed to serialize processed data to JSON")?;
 
     // Compress with gzip
-    let output_file = File::create(&args.outfile_compressed)?;
+    let output_file = File::create(&args.outfile_compressed)
+        .with_context(|| format!("Failed to create output file: {}", args.outfile_compressed))?;
     let mut encoder = GzEncoder::new(output_file, Compression::best());
-    encoder.write_all(&json_output)?;
-    encoder.finish()?;
+    encoder
+        .write_all(&json_output)
+        .context("Failed to write compressed data")?;
+    encoder
+        .finish()
+        .context("Failed to finish gzip compression")?;
 
     let size_compressed = get_file_size_human(Path::new(&args.outfile_compressed));
     log_info(&format!(
