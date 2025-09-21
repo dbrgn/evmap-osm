@@ -36,6 +36,16 @@ fn get_file_size_human(path: &Path) -> String {
     }
 }
 
+fn serialize_json_pretty<T: serde::Serialize>(value: &T) -> Result<Vec<u8>> {
+    let mut output = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
+    let mut serializer = serde_json::Serializer::with_formatter(&mut output, formatter);
+    value
+        .serialize(&mut serializer)
+        .context("Failed to serialize to JSON")?;
+    Ok(output)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
@@ -87,9 +97,8 @@ async fn main() -> Result<()> {
 
     let processed = process_elements(overpass_response.elements)?;
 
-    // Serialize to JSON
-    let json_output =
-        serde_json::to_vec(&processed).context("Failed to serialize processed data to JSON")?;
+    // Serialize to JSON with pretty formatting (1-space indentation)
+    let json_output = serialize_json_pretty(&processed)?;
 
     // Compress with gzip
     let output_file = File::create(&args.outfile_compressed)
