@@ -6,35 +6,11 @@ use flate2::{Compression, write::GzEncoder};
 
 mod cli;
 mod overpass;
+mod utils;
 
 use cli::Args;
 use overpass::{download_data, parse_response, process_elements};
-
-fn log_info(msg: &str) {
-    println!("\x1b[32m{}\x1b[0m", msg);
-}
-
-fn log_error(msg: &str) {
-    eprintln!("\x1b[31m{}\x1b[0m", msg);
-}
-
-fn get_file_size_human(path: &Path) -> String {
-    match std::fs::metadata(path) {
-        Ok(metadata) => {
-            let size = metadata.len() as f64;
-            if size < 1024.0 {
-                format!("{:.0}B", size)
-            } else if size < 1024.0 * 1024.0 {
-                format!("{:.1}K", size / 1024.0)
-            } else if size < 1024.0 * 1024.0 * 1024.0 {
-                format!("{:.1}M", size / (1024.0 * 1024.0))
-            } else {
-                format!("{:.1}G", size / (1024.0 * 1024.0 * 1024.0))
-            }
-        }
-        Err(_) => "unknown".to_string(),
-    }
-}
+use utils::{get_file_size_human, log_error, log_info};
 
 fn serialize_json_pretty<T: serde::Serialize>(value: &T) -> Result<Vec<u8>> {
     let mut output = Vec::new();
