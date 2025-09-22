@@ -12,9 +12,13 @@ use cli::Args;
 use overpass::{download_data, parse_response, process_elements};
 use utils::{get_file_size_human, log_error, log_info};
 
-fn serialize_json_pretty<T: serde::Serialize>(value: &T) -> Result<Vec<u8>> {
+/// Extra seconds to add to HTTP client timeout beyond the Overpass query timeout
+/// This provides buffer for network latency and response processing
+const HTTP_TIMEOUT_BUFFER_SECONDS: u64 = 1;
+
+fn serialize_json_pretty<T: serde::Serialize>(value: &T, indent: &[u8]) -> Result<Vec<u8>> {
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(indent);
     let mut output = Vec::new();
-    let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
     let mut serializer = serde_json::Serializer::with_formatter(&mut output, formatter);
     value
         .serialize(&mut serializer)
@@ -29,7 +33,7 @@ async fn main() -> Result<()> {
     // Build HTTP client
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(
-            args.timeout_seconds as u64 + 30,
+            args.timeout_seconds as u64 + HTTP_TIMEOUT_BUFFER_SECONDS,
         ))
         .build()
         .context("Failed to build HTTP client")?;
@@ -74,7 +78,7 @@ async fn main() -> Result<()> {
     let processed = process_elements(overpass_response.elements)?;
 
     // Serialize to JSON with pretty formatting (1-space indentation)
-    let json_output = serialize_json_pretty(&processed)?;
+    let json_output = serialize_json_pretty(&processed, b" ")?;
 
     // Compress with gzip
     let output_file = File::create(&args.outfile_compressed)
