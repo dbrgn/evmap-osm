@@ -73,10 +73,10 @@ async fn main() -> Result<()> {
     if element_count == 0 {
         log_error("Query failed, found 0 elements.");
         // Try to parse for error details
-        if let Ok(json_value) = serde_json::from_slice::<serde_json::Value>(&response_bytes) {
-            if let Some(remark) = json_value.get("remark").and_then(|v| v.as_str()) {
-                log_error(&format!("Details: {}", remark));
-            }
+        if let Ok(json_value) = serde_json::from_slice::<serde_json::Value>(&response_bytes)
+            && let Some(remark) = json_value.get("remark").and_then(|v| v.as_str())
+        {
+            log_error(&format!("Details: {}", remark));
         }
         anyhow::bail!("No elements found in response");
     }
