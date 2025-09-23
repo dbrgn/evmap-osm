@@ -59,15 +59,9 @@ Download charging station data with default settings:
 
     evmap-osm-loader
 
-**Note 1:** The API query may take multiple minutes. The default timeout is set
+**Note:** The API query may take multiple minutes. The default timeout is set
 to 15 minutes, but depending on the load on the API endpoint, this may not be
 sufficient.
-
-**Note 2:** By default, the script uses the Overpass API interpreter at
-<https://overpass.osm.ch/api/interpreter>, which returns only data within
-Switzerland. This is great for testing with a reduced data set. For a worldwide
-result set, you can specify the URL `https://overpass-api.de/api/interpreter`
-using the `--overpass-url` option.
 
 Show usage:
 
@@ -83,9 +77,12 @@ Options:
           Keep intermediate raw response file
           [default: false]
 
-      --overpass-url <OVERPASS_URL>
-          Overpass API interpreter URL
-          [default: https://overpass.osm.ch/api/interpreter]
+      --overpass-api-endpoint <OVERPASS_API_ENDPOINT>
+          Overpass API to use ('switzerland', 'world', or a custom URL)
+
+          The following hardcoded endpoints are supported:
+          - switzerland (https://overpass.osm.ch/api/interpreter)
+          - world (https://overpass-api.de/api/interpreter)
 
       --timeout-seconds <TIMEOUT_SECONDS>
           Timeout in seconds for the Overpass query

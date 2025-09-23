@@ -10,7 +10,7 @@ mod utils;
 
 use cli::Args;
 use overpass::{download_data, parse_response, process_elements};
-use utils::{get_file_size_human, log_error, log_info};
+use utils::{get_file_size_human, log_debug, log_error, log_info};
 
 /// Extra seconds to add to HTTP client timeout beyond the Overpass query timeout
 /// This provides buffer for network latency and response processing
@@ -39,12 +39,18 @@ async fn main() -> Result<()> {
         .context("Failed to build HTTP client")?;
 
     // Step 1: Download data
+    let overpass_api_endpoint = args.get_overpass_url();
     log_info(&format!(
         "1: Downloading data through Overpass API (this may take up to {} seconds...)",
         args.timeout_seconds
     ));
+    log_debug(&format!(
+        "-> Using overpass API endpoint: {}",
+        overpass_api_endpoint
+    ));
 
-    let response_bytes = download_data(&client, &args.overpass_url, args.timeout_seconds).await?;
+    let response_bytes =
+        download_data(&client, overpass_api_endpoint, args.timeout_seconds).await?;
 
     // Parse the JSON response
     let overpass_response = parse_response(&response_bytes)?;

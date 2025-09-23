@@ -36,3 +36,8 @@ This includes:
 - Choosing between two possible architectural approaches
 - Choosing between two libraries to use
 ...and similar situations.
+
+## Conversational Style
+
+Don't summarize changes at the end of a prompt that you make as a direct result
+to instructions.

@@ -4,6 +4,10 @@ pub fn log_info(msg: &str) {
     println!("\x1b[32m{}\x1b[0m", msg);
 }
 
+pub fn log_debug(msg: &str) {
+    println!("{}", msg);
+}
+
 pub fn log_error(msg: &str) {
     eprintln!("\x1b[31m{}\x1b[0m", msg);
 }
